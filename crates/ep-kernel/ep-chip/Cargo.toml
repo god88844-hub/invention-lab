@@ -5,6 +5,13 @@ edition.workspace = true
 license.workspace = true
 description = "Cycle-accurate RV32IM/Custom-ISA CPU kernel (WP-4.1): register-file bit-exact against the Phase 0 chip-engine harness and the IL-8/RV32IM bounded reference, with declared dynamic-power accounting"
 
+[dev-dependencies]
+# WP-4.4: the DVFS closed-loop coupling test drives a real ep-thermal
+# ThermalGrid2D as the tile-temperature feed (the runtime controller itself
+# is feed-generic — no runtime dependency).
+ep-thermal = { path = "../ep-thermal" }
+url = "2"
+
 [dependencies]
 ep-core = { path = "../ep-core" }
 serde = { workspace = true }

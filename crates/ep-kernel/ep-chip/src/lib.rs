@@ -36,6 +36,15 @@
 //!   `packages/chip-engine/src/accelerators.mjs` oracle (§5: TPU GEMM oracle
 //!   = exact INT8 reference math, tolerance bit-exact).
 //!
+//! - [`soc`]: WP-4.4 Apple-M-class unified-memory SoC interposer composer —
+//!   the NoC fabric (1 cycle/hop over the sealed `02` floorplan routes),
+//!   LPDDR5/HBM/PCIe memory stacks from the SHA-256-verified 07 vault
+//!   payload, the unified zero-copy vs discrete-PCIe DMA comparison engine
+//!   (bit-exact vs the `packages/chip-engine` oracle), §3 Roofline +
+//!   Little's Law bounds, and the closed-loop DVFS thermal-throttle
+//!   controller (125 °C stepwise / ±5 °C hysteresis / 200 °C
+//!   `si_thermal_runaway` latch) coupled to `ep-thermal` tile temps.
+//!
 //! Oracle calibration (`03_PHYSICS_MATH_FUNDAMENTALS.md` §5): RV32IM
 //! execution is bit-exact against the Phase 0 harness. The QEMU user-mode
 //! differential reuses the Phase 8 protocol on the same bounded program and
@@ -46,12 +55,21 @@ pub mod cpu;
 pub mod custom;
 pub mod isa;
 pub mod power;
+pub mod soc;
 pub mod tpu;
 pub mod twin;
 
 pub use cpu::{Cpu, CpuError, CpuIsa, RunResult, StepOutcome, Trace, Trap};
 pub use custom::{CustomEffect, CustomIsaHook};
 pub use power::{DynamicPowerModel, Farad, Hertz, InstructionMix, PowerError};
+pub use soc::{
+    alpha_energy, bytes_per_cycle, compare_architectures, copy_time_cycles, littles_law, roofline,
+    submission_latency_cycles, ArchResult, CacheHierarchy, CompareDelta, CompareOptions,
+    CompareResult, DvfsAction, DvfsController, DvfsEvent, FloorplanBlock, Hbm, InterposerReference,
+    Lpddr5, MemoryKind, NoCFabric, Pcie, RooflineBound, RooflineResult, SocBaselines, SocError,
+    SocFloorplan, DVFS_HYSTERESIS_C, DVFS_STEP_PCT, RUNAWAY_THRESHOLD_C, SOC_BADGE,
+    THROTTLE_THRESHOLD_C,
+};
 pub use tpu::{
     pack_q4, unpack_q4, OverflowEvent, OverflowPolicy, Q4DequantTable, Q4Packed, Q4Result,
     QdqScales, SystolicResult, SystolicTpu, TileTelemetry, TpuConfig, TpuError,

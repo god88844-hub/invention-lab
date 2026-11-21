@@ -1,0 +1,463 @@
+{
+ "_provenance": {
+  "format": "invention-lab/ep-chip-soc-parity/1",
+  "source": "packages/chip-engine/src/accelerators.mjs compareArchitectures (JS oracle)",
+  "generator": "tests/data/gen_soc_parity.mjs (deterministic, committed)",
+  "semantics": "bytesPerElement int8=1 q4=0.5; unified zeroCopy => weightsMoved=0; bytesPerCycle = BW*1e9/(clockMHz*1e6); dmaCycles = bytesOnBus/bytesPerCycle; dequantCycles(q4) = ceil(M/P)*ceil(N/P)*P; totalCycles = compute + ceil(dma) + dequant; bandwidthGBps = bytesOnBus/(totalCycles/clockMHz/1e6)/1e9; energyPerOpPJ = alpha*V^2*1e12 (alpha int8 1.2 / q4 0.9); dynamicPowerW = ops*E*1e-12/seconds; hotspotC = 45 + P*0.8*10; deltas = (discrete-unified)/discrete*100. Floats frozen as IEEE-754 bit hex for bit-exact replay.",
+  "badge": "SIMULATED_ARCHITECTURAL_MODEL",
+  "note": "Architectural-model parity fixture — no silicon measurements."
+ },
+ "cases": [
+  {
+   "id": "js-defaults",
+   "workload": {},
+   "opts": {},
+   "discreteInt8": {
+    "architecture": "discrete-pcie",
+    "radix": "int8",
+    "totalCycles": 5261,
+    "bandwidthGBpsBits": "03cc5ddada28fa3f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "a41be8569ef21842",
+    "hotspotCBits": "a59bfe569ef24842",
+    "bytesOnBus": 12288
+   },
+   "discreteQ4": {
+    "architecture": "discrete-pcie",
+    "radix": "q4",
+    "totalCycles": 5639,
+    "bandwidthGBpsBits": "61c0948bf167e83f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "360e41a1e0741142",
+    "hotspotCBits": "368e57a1e0744142",
+    "bytesOnBus": 6144
+   },
+   "unifiedInt8": {
+    "architecture": "unified-memory",
+    "radix": "int8",
+    "totalCycles": 5077,
+    "bandwidthGBpsBits": "94ad24d35f12f23f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "e7f914e014da1942",
+    "hotspotCBits": "e8792be014da4942",
+    "bytesOnBus": 8192
+   },
+   "unifiedQ4": {
+    "architecture": "unified-memory",
+    "radix": "q4",
+    "totalCycles": 5547,
+    "bandwidthGBpsBits": "241dcd1e618ae03f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "334fe407ffbe1142",
+    "hotspotCBits": "34cffa07ffbe4142",
+    "bytesOnBus": 4096
+   },
+   "delta": {
+    "cycleReductionPctBits": "96d851a6befa0b40",
+    "energyReductionPctBits": "0000000000000000",
+    "q4BandwidthGainPctBits": "2585316d461e4bc0"
+   },
+   "badge": "SIMULATED_ARCHITECTURAL_MODEL"
+  },
+  {
+   "id": "default-128",
+   "workload": {
+    "M": 128,
+    "N": 128,
+    "K": 128
+   },
+   "opts": {},
+   "discreteInt8": {
+    "architecture": "discrete-pcie",
+    "radix": "int8",
+    "totalCycles": 37428,
+    "bandwidthGBpsBits": "448982d0a66aed3f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "30bd31fec90d1c42",
+    "hotspotCBits": "303d48fec90d4c42",
+    "bytesOnBus": 49152
+   },
+   "discreteQ4": {
+    "architecture": "discrete-pcie",
+    "radix": "q4",
+    "totalCycles": 38938,
+    "bandwidthGBpsBits": "32bd7ab09d46dc3f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "315ac92b76391442",
+    "hotspotCBits": "32dadf2b76394442",
+    "bytesOnBus": 24576
+   },
+   "unifiedInt8": {
+    "architecture": "unified-memory",
+    "radix": "int8",
+    "totalCycles": 36690,
+    "bandwidthGBpsBits": "77cd26f56a01e43f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "f02f0d373f9e1c42",
+    "hotspotCBits": "f1af23373f9e4c42",
+    "bytesOnBus": 32768
+   },
+   "unifiedQ4": {
+    "architecture": "unified-memory",
+    "radix": "q4",
+    "totalCycles": 38569,
+    "bandwidthGBpsBits": "06f6c1c5e907d33f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "7e4308ebfe6a1442",
+    "hotspotCBits": "7ec31eebfe6a4442",
+    "bytesOnBus": 16384
+   },
+   "delta": {
+    "cycleReductionPctBits": "2eff154c6f8cff3f",
+    "energyReductionPctBits": "0000000000000000",
+    "q4BandwidthGainPctBits": "e775d560cb374ac0"
+   },
+   "badge": "SIMULATED_ARCHITECTURAL_MODEL"
+  },
+  {
+   "id": "int8-clock-100",
+   "workload": {
+    "M": 64,
+    "N": 64,
+    "K": 64
+   },
+   "opts": {
+    "clockMHz": 100
+   },
+   "discreteInt8": {
+    "architecture": "discrete-pcie",
+    "radix": "int8",
+    "totalCycles": 5031,
+    "bandwidthGBpsBits": "4ee8073d7143cf3f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "871e186aadd0ed41",
+    "hotspotCBits": "871ecc6aadd01d42",
+    "bytesOnBus": 12288
+   },
+   "discreteQ4": {
+    "architecture": "discrete-pcie",
+    "radix": "q4",
+    "totalCycles": 5524,
+    "bandwidthGBpsBits": "6d10ade42879bc3f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "ffd4c7029d5de441",
+    "hotspotCBits": "00d57b039d5d1442",
+    "bytesOnBus": 6144
+   },
+   "unifiedInt8": {
+    "architecture": "unified-memory",
+    "radix": "int8",
+    "totalCycles": 5005,
+    "bandwidthGBpsBits": "80dfa88458f3c43f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "296b55e253f8ed41",
+    "hotspotCBits": "2a6b09e353f81d42",
+    "bytesOnBus": 8192
+   },
+   "unifiedQ4": {
+    "architecture": "unified-memory",
+    "radix": "q4",
+    "totalCycles": 5511,
+    "bandwidthGBpsBits": "5b221a21e706b33f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "7a428f6ce969e441",
+    "hotspotCBits": "7a42436de9691442",
+    "bytesOnBus": 4096
+   },
+   "delta": {
+    "cycleReductionPctBits": "2344b37b9789e03f",
+    "energyReductionPctBits": "0000000000000000",
+    "q4BandwidthGainPctBits": "5f11a6ef9f4b4bc0"
+   },
+   "badge": "SIMULATED_ARCHITECTURAL_MODEL"
+  },
+  {
+   "id": "q4-vdd-07",
+   "workload": {
+    "M": 96,
+    "N": 64,
+    "K": 96
+   },
+   "opts": {
+    "vdd": 0.7
+   },
+   "discreteInt8": {
+    "architecture": "discrete-pcie",
+    "radix": "int8",
+    "totalCycles": 11031,
+    "bandwidthGBpsBits": "c1ec850e5dd5f53f",
+    "energyPerOpPJBits": "000000fff01c6142",
+    "dynamicPowerWBits": "bbf921f8247f1442",
+    "hotspotCBits": "bb7938f8247f4442",
+    "bytesOnBus": 21504
+   },
+   "discreteQ4": {
+    "architecture": "discrete-pcie",
+    "radix": "q4",
+    "totalCycles": 11564,
+    "bandwidthGBpsBits": "dc2e260cbed3e43f",
+    "energyPerOpPJBits": "ffff7f7e69ab5942",
+    "dynamicPowerWBits": "6f52f7e5f1530d42",
+    "hotspotCBits": "705224e6f1533d42",
+    "bytesOnBus": 10752
+   },
+   "unifiedInt8": {
+    "architecture": "unified-memory",
+    "radix": "int8",
+    "totalCycles": 10719,
+    "bandwidthGBpsBits": "acab94319c0cf03f",
+    "energyPerOpPJBits": "000000fff01c6142",
+    "dynamicPowerWBits": "f88018c2df171542",
+    "hotspotCBits": "f8002fc2df174542",
+    "bytesOnBus": 15360
+   },
+   "unifiedQ4": {
+    "architecture": "unified-memory",
+    "radix": "q4",
+    "totalCycles": 11408,
+    "bandwidthGBpsBits": "99981f68ee28de3f",
+    "energyPerOpPJBits": "ffff7f7e69ab5942",
+    "dynamicPowerWBits": "65c475f89cba0d42",
+    "hotspotCBits": "66c4a2f89cba3d42",
+    "bytesOnBus": 7680
+   },
+   "delta": {
+    "cycleReductionPctBits": "5d5d9f5b8ca00640",
+    "energyReductionPctBits": "0000000000000000",
+    "q4BandwidthGainPctBits": "c1a8da2789824ac0"
+   },
+   "badge": "SIMULATED_ARCHITECTURAL_MODEL"
+  },
+  {
+   "id": "edge-tiles",
+   "workload": {
+    "M": 70,
+    "N": 45,
+    "K": 33
+   },
+   "opts": {
+    "gridSize": 8
+   },
+   "discreteInt8": {
+    "architecture": "discrete-pcie",
+    "radix": "int8",
+    "totalCycles": 2690,
+    "bandwidthGBpsBits": "887361007eeafc3f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "abb77b7609591342",
+    "hotspotCBits": "ac37927609594342",
+    "bytesOnBus": 6945
+   },
+   "discreteQ4": {
+    "architecture": "discrete-pcie",
+    "radix": "q4",
+    "totalCycles": 3046,
+    "bandwidthGBpsBits": "aaff75365489e93f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "488301ad3aa10942",
+    "hotspotCBits": "48832ead3aa13942",
+    "bytesOnBus": 3472.5
+   },
+   "unifiedInt8": {
+    "architecture": "unified-memory",
+    "radix": "int8",
+    "totalCycles": 2595,
+    "bandwidthGBpsBits": "4145d6acb890f73f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "e00822ad5c0e1442",
+    "hotspotCBits": "e08838ad5c0e4442",
+    "bytesOnBus": 5460
+   },
+   "unifiedQ4": {
+    "architecture": "unified-memory",
+    "radix": "q4",
+    "totalCycles": 2999,
+    "bandwidthGBpsBits": "e1a68b440b64e43f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "6fb3865a0e080a42",
+    "hotspotCBits": "70b3b35a0e083a42",
+    "bytesOnBus": 2730
+   },
+   "delta": {
+    "cycleReductionPctBits": "8ce19fb8b6400c40",
+    "energyReductionPctBits": "0000000000000000",
+    "q4BandwidthGainPctBits": "18c8e86f275e4cc0"
+   },
+   "badge": "SIMULATED_ARCHITECTURAL_MODEL"
+  },
+  {
+   "id": "grid-4",
+   "workload": {
+    "M": 32,
+    "N": 32,
+    "K": 64
+   },
+   "opts": {
+    "gridSize": 4
+   },
+   "discreteInt8": {
+    "architecture": "discrete-pcie",
+    "radix": "int8",
+    "totalCycles": 4592,
+    "bandwidthGBpsBits": "fa189c8fc1f9e83f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "b52b51bb1295fc41",
+    "hotspotCBits": "b62babbb12952c42",
+    "bytesOnBus": 5120
+   },
+   "discreteQ4": {
+    "architecture": "discrete-pcie",
+    "radix": "q4",
+    "totalCycles": 4792,
+    "bandwidthGBpsBits": "1ba7afa3e7eed73f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "943154bdc38af441",
+    "hotspotCBits": "9531aebdc38a2442",
+    "bytesOnBus": 2560
+   },
+   "unifiedInt8": {
+    "architecture": "unified-memory",
+    "radix": "int8",
+    "totalCycles": 4512,
+    "bandwidthGBpsBits": "134a34708b80de3f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "f59d8dface16fd41",
+    "hotspotCBits": "f59de7face162d42",
+    "bytesOnBus": 3072
+   },
+   "unifiedQ4": {
+    "architecture": "unified-memory",
+    "radix": "q4",
+    "totalCycles": 4752,
+    "bandwidthGBpsBits": "4b720d7a2cf6cc3f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "207cf0c107b7f441",
+    "hotspotCBits": "207c4ac207b72442",
+    "bytesOnBus": 1536
+   },
+   "delta": {
+    "cycleReductionPctBits": "04a5d974e3dffb3f",
+    "energyReductionPctBits": "0000000000000000",
+    "q4BandwidthGainPctBits": "ef0c89793b434ac0"
+   },
+   "badge": "SIMULATED_ARCHITECTURAL_MODEL"
+  },
+  {
+   "id": "hbm-bus",
+   "workload": {
+    "M": 64,
+    "N": 64,
+    "K": 128
+   },
+   "opts": {
+    "hbmGBps": 600,
+    "pcieGBps": 32,
+    "lpddrGBps": 68
+   },
+   "discreteInt8": {
+    "architecture": "discrete-pcie",
+    "radix": "int8",
+    "totalCycles": 9536,
+    "bandwidthGBpsBits": "1aed1eb6be0df83f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "67b47bd8fa861b42",
+    "hotspotCBits": "683492d8fa864b42",
+    "bytesOnBus": 20480
+   },
+   "discreteQ4": {
+    "architecture": "discrete-pcie",
+    "radix": "q4",
+    "totalCycles": 9824,
+    "bandwidthGBpsBits": "7cee96893959e73f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "af15820c4b0a1442",
+    "hotspotCBits": "b095980c4b0a4442",
+    "bytesOnBus": 10240
+   },
+   "unifiedInt8": {
+    "architecture": "unified-memory",
+    "radix": "int8",
+    "totalCycles": 9215,
+    "bandwidthGBpsBits": "4fd25f46b2deed3f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "ec39253c757c1c42",
+    "hotspotCBits": "edb93b3c757c4c42",
+    "bytesOnBus": 12288
+   },
+   "unifiedQ4": {
+    "architecture": "unified-memory",
+    "radix": "q4",
+    "totalCycles": 9664,
+    "bandwidthGBpsBits": "4a870b2a6c7bdc3f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "eeac76563b5f1442",
+    "hotspotCBits": "ef2c8d563b5f4442",
+    "bytesOnBus": 6144
+   },
+   "delta": {
+    "cycleReductionPctBits": "cf68f7b0f5ed0a40",
+    "energyReductionPctBits": "0000000000000000",
+    "q4BandwidthGainPctBits": "68b5b3da59294ac0"
+   },
+   "badge": "SIMULATED_ARCHITECTURAL_MODEL"
+  },
+  {
+   "id": "m2-bus",
+   "workload": {
+    "M": 64,
+    "N": 64,
+    "K": 64
+   },
+   "opts": {
+    "lpddrGBps": 100,
+    "pcieGBps": 64
+   },
+   "discreteInt8": {
+    "architecture": "discrete-pcie",
+    "radix": "int8",
+    "totalCycles": 5127,
+    "bandwidthGBpsBits": "27a93285e2d7fa3f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "5904cf428a991942",
+    "hotspotCBits": "5a84e5428a994942",
+    "bytesOnBus": 12288
+   },
+   "discreteQ4": {
+    "architecture": "discrete-pcie",
+    "radix": "q4",
+    "totalCycles": 5572,
+    "bandwidthGBpsBits": "492d704412b3e83f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "3468d9f19caa1142",
+    "hotspotCBits": "34e8eff19caa4142",
+    "bytesOnBus": 6144
+   },
+   "unifiedInt8": {
+    "architecture": "unified-memory",
+    "radix": "int8",
+    "totalCycles": 5050,
+    "bandwidthGBpsBits": "fbdfba001c2bf23f",
+    "energyPerOpPJBits": "000000c00b5a6642",
+    "dynamicPowerWBits": "a553f32077fd1942",
+    "hotspotCBits": "a5d3092177fd4942",
+    "bytesOnBus": 8192
+   },
+   "unifiedQ4": {
+    "architecture": "unified-memory",
+    "radix": "q4",
+    "totalCycles": 5533,
+    "bandwidthGBpsBits": "064661f01795e03f",
+    "energyPerOpPJBits": "010000d088c36042",
+    "dynamicPowerWBits": "f9d489c17dca1142",
+    "hotspotCBits": "f954a0c17dca4142",
+    "bytesOnBus": 4096
+   },
+   "delta": {
+    "cycleReductionPctBits": "c1d991f19607f83f",
+    "energyReductionPctBits": "0000000000000000",
+    "q4BandwidthGainPctBits": "47bd892baf2e4bc0"
+   },
+   "badge": "SIMULATED_ARCHITECTURAL_MODEL"
+  }
+ ]
+}
