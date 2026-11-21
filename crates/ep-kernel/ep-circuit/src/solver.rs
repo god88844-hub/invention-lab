@@ -1,7 +1,13 @@
 //! MNA DC solver — numeric-Jacobian Newton–Raphson with damped stepping,
 //! source stepping, and gmin escalation. Faithful port of
 //! `packages/physics-engine/src/mna.mjs` → `solveDC` (the ±1e-9 parity oracle).
+//!
+//! WP-2.2: MOSFET conduction dispatches on the per-device compact model —
+//! `ShichmanHodges` (the unchanged WP-2.1 parity path) or the ngspice-
+//! calibrated BSIM level of `crate::bsim`. Uncharacterized BSIM profiles are
+//! refused fail-closed at admission time before any Newton iteration.
 
+use crate::bsim::{self, BsimOp, MosfetModel, SoaTelemetry};
 use crate::mosfet::operating_point;
 use crate::netlist::{ElementKind, Netlist};
 use ep_core::admission::{AdmissionController, AdmissionDecision};
@@ -40,6 +46,17 @@ pub struct SolveResult {
     pub device_power: BTreeMap<String, f64>,
     /// ‖F‖∞ of the converged residual (gmin terms included).
     pub residual_norm: f64,
+    /// Per-device BSIM telemetry at the converged operating point (gm/gds,
+    /// charge-conserving Cgs/Cgd, region classification, SOA status). Empty
+    /// for pure square-law netlists.
+    pub device_bsim: BTreeMap<String, BsimDeviceTelemetry>,
+}
+
+/// BSIM-level telemetry for one device (Phase 4 DVFS consumes Cgs/Cgd).
+#[derive(Debug, Clone)]
+pub struct BsimDeviceTelemetry {
+    pub op: BsimOp,
+    pub soa: Option<SoaTelemetry>,
 }
 
 #[derive(Debug, Clone)]
@@ -107,6 +124,25 @@ struct ResidualContext<'a> {
     gmin: f64,
 }
 
+/// Unified MOSFET conduction op `(i, in_is_drain)` for the residual stamps:
+/// the Shichman–Hodges parity path, or the BSIM level on magnitude
+/// coordinates. Uncharacterized BSIM profiles never reach here — `solve_dc`
+/// refuses them at admission.
+fn mosfet_conduction(q: &crate::mosfet::MosfetParams, vg: f64, vd: f64, vs: f64) -> (f64, bool) {
+    match q.model {
+        MosfetModel::ShichmanHodges => {
+            let op = operating_point(q, vg, vd, vs);
+            (op.i, op.in_is_drain)
+        }
+        MosfetModel::Bsim(id) => {
+            let p = bsim::profile(id);
+            let op = bsim::operating_point(p, vg, vd, vs, q.w_um, q.l_um)
+                .expect("bsim profile gated by the solve admission pre-check");
+            (op.i, op.in_is_drain)
+        }
+    }
+}
+
 fn residual(ctx: &ResidualContext, x: &[f64], out: &mut [f64]) {
     let netlist = ctx.netlist;
     out.fill(0.0);
@@ -167,22 +203,14 @@ fn residual(ctx: &ResidualContext, x: &[f64], out: &mut [f64]) {
                         out[e.nodes[2] - 1] -= i;
                     }
                 }
-                let op = operating_point(q, vg, vd, vs);
-                let in_idx = if op.in_is_drain {
-                    e.nodes[1]
-                } else {
-                    e.nodes[2]
-                };
-                let out_idx = if op.in_is_drain {
-                    e.nodes[2]
-                } else {
-                    e.nodes[1]
-                };
+                let (i, in_is_drain) = mosfet_conduction(q, vg, vd, vs);
+                let in_idx = if in_is_drain { e.nodes[1] } else { e.nodes[2] };
+                let out_idx = if in_is_drain { e.nodes[2] } else { e.nodes[1] };
                 if in_idx != 0 {
-                    out[in_idx - 1] += op.i;
+                    out[in_idx - 1] += i;
                 }
                 if out_idx != 0 {
-                    out[out_idx - 1] -= op.i;
+                    out[out_idx - 1] -= i;
                 }
             }
         }
@@ -278,6 +306,27 @@ pub fn solve_dc(
         return Err(SolveError::Refused(decision));
     }
 
+    // WP-2.2 fail-closed model gate: every BSIM device must have a
+    // ngspice-characterized table. Refusing is honest — never silently
+    // degrade to a fabricated substitute (Level-1 INSUFFICIENT_MODEL_DATA).
+    for e in &netlist.elements {
+        if e.kind == ElementKind::Mosfet {
+            let q = e.mosfet.as_ref().expect("mosfet params");
+            if let MosfetModel::Bsim(id) = q.model {
+                if !bsim::is_characterized(id) {
+                    let p = bsim::profile(id);
+                    return Err(SolveError::Refused(AdmissionDecision {
+                        admitted: false,
+                        reason: format!(
+                            "BSIM device '{}' ({}): no ngspice-characterized table — refusing fail-closed. {}",
+                            p.device, p.pdk, bsim::ASAP7_NOT_CHARACTERIZED
+                        ),
+                    }));
+                }
+            }
+        }
+    }
+
     let n_nodes = netlist.n_nodes();
     let m = netlist.v_source_count();
     let n = n_nodes - 1 + m;
@@ -351,6 +400,7 @@ pub fn solve_dc(
     let v = |idx: usize| -> f64 { node_voltages[idx] };
     let mut device_currents = BTreeMap::new();
     let mut device_power = BTreeMap::new();
+    let mut device_bsim = BTreeMap::new();
     for e in &netlist.elements {
         match e.kind {
             ElementKind::Resistor => {
@@ -374,28 +424,35 @@ pub fn solve_dc(
             }
             ElementKind::Mosfet => {
                 let q = e.mosfet.as_ref().unwrap();
-                let op = operating_point(q, v(e.nodes[0]), v(e.nodes[1]), v(e.nodes[2]));
-                let v_in = if op.in_is_drain {
-                    v(e.nodes[1])
-                } else {
-                    v(e.nodes[2])
-                };
-                let v_out = if op.in_is_drain {
-                    v(e.nodes[2])
-                } else {
-                    v(e.nodes[1])
-                };
-                device_currents.insert(e.label.clone(), op.i);
-                device_power.insert(e.label.clone(), op.i * (v_in - v_out));
+                let vg = v(e.nodes[0]);
+                let vd = v(e.nodes[1]);
+                let vs = v(e.nodes[2]);
+                let (i, in_is_drain) = mosfet_conduction(q, vg, vd, vs);
+                let v_in = if in_is_drain { vd } else { vs };
+                let v_out = if in_is_drain { vs } else { vd };
+                device_currents.insert(e.label.clone(), i);
+                device_power.insert(e.label.clone(), i * (v_in - v_out));
                 device_power.insert(
                     format!("{}.vgs", e.label),
                     if q.mosfet_type == crate::mosfet::MosfetType::N {
-                        v(e.nodes[0]) - v_out
+                        vg - v_out
                     } else {
-                        v_in - v(e.nodes[0])
+                        v_in - vg
                     },
                 );
                 device_power.insert(format!("{}.vds", e.label), v_in - v_out);
+                if let MosfetModel::Bsim(id) = q.model {
+                    let p = bsim::profile(id);
+                    if let Ok(op) = bsim::operating_point(p, vg, vd, vs, q.w_um, q.l_um) {
+                        let vgs_mag = if p.mosfet_type == crate::mosfet::MosfetType::N {
+                            (vg - v_out).abs()
+                        } else {
+                            (v_in - vg).abs()
+                        };
+                        let soa = bsim::soa_check(p, vgs_mag);
+                        device_bsim.insert(e.label.clone(), BsimDeviceTelemetry { op, soa });
+                    }
+                }
             }
         }
     }
@@ -419,6 +476,7 @@ pub fn solve_dc(
         device_currents,
         device_power,
         residual_norm,
+        device_bsim,
     })
 }
 
@@ -471,22 +529,15 @@ pub fn kcl_max_residual(netlist: &Netlist, result: &SolveResult) -> f64 {
             }
             ElementKind::Mosfet => {
                 let q = e.mosfet.as_ref().unwrap();
-                let op = operating_point(q, v(e.nodes[0]), v(e.nodes[1]), v(e.nodes[2]));
-                let in_idx = if op.in_is_drain {
-                    e.nodes[1]
-                } else {
-                    e.nodes[2]
-                };
-                let out_idx = if op.in_is_drain {
-                    e.nodes[2]
-                } else {
-                    e.nodes[1]
-                };
+                let (i, in_is_drain) =
+                    mosfet_conduction(q, v(e.nodes[0]), v(e.nodes[1]), v(e.nodes[2]));
+                let in_idx = if in_is_drain { e.nodes[1] } else { e.nodes[2] };
+                let out_idx = if in_is_drain { e.nodes[2] } else { e.nodes[1] };
                 if in_idx != 0 {
-                    residuals[in_idx - 1] += op.i;
+                    residuals[in_idx - 1] += i;
                 }
                 if out_idx != 0 {
-                    residuals[out_idx - 1] -= op.i;
+                    residuals[out_idx - 1] -= i;
                 }
             }
         }

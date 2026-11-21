@@ -22,6 +22,56 @@ pub struct MosfetParams {
     pub kp: f64,
     /// Channel-length modulation, 1/V.
     pub lambda: f64,
+    /// Compact-model selector. The default `ShichmanHodges` preserves the
+    /// WP-2.1 parity path bit-exactly; `Bsim(id)` routes through the
+    /// ngspice-calibrated evaluation in `crate::bsim`.
+    pub model: crate::bsim::MosfetModel,
+    /// Device geometry in µm (used by the BSIM level; ignored by the
+    /// square-law path, which folds W/L into `kp`).
+    pub w_um: f64,
+    pub l_um: f64,
+}
+
+impl MosfetParams {
+    /// Square-law parameters only (WP-2.1 parity shape).
+    pub fn square_law(mosfet_type: MosfetType, vth: f64, kp: f64, lambda: f64) -> MosfetParams {
+        MosfetParams {
+            mosfet_type,
+            vth,
+            kp,
+            lambda,
+            model: crate::bsim::MosfetModel::ShichmanHodges,
+            w_um: 1.0,
+            l_um: 1.0,
+        }
+    }
+
+    /// BSIM-level SKY130A `nfet_01v8` at the characterized bin-0 geometry
+    /// (W = 1.26 µm, L = 0.15 µm) unless overridden.
+    pub fn sky130_bsim_nfet(w_um: f64, l_um: f64) -> MosfetParams {
+        MosfetParams {
+            mosfet_type: MosfetType::N,
+            vth: 0.55,
+            kp: 0.004,
+            lambda: 0.06,
+            model: crate::bsim::MosfetModel::Bsim(crate::bsim::BsimModelId::Sky130aNfet01v8),
+            w_um,
+            l_um,
+        }
+    }
+
+    /// BSIM-level SKY130A `pfet_01v8` (signed vth per the 02 reference data).
+    pub fn sky130_bsim_pfet(w_um: f64, l_um: f64) -> MosfetParams {
+        MosfetParams {
+            mosfet_type: MosfetType::P,
+            vth: -0.55,
+            kp: 0.004,
+            lambda: 0.06,
+            model: crate::bsim::MosfetModel::Bsim(crate::bsim::BsimModelId::Sky130aPfet01v8),
+            w_um,
+            l_um,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

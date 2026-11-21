@@ -21,18 +21,8 @@ fn inverter() -> crate::Netlist {
     let mut nl = crate::Netlist::new(&["gnd", "vdd", "vin", "vout"]);
     nl.add_v_source("vdd", "gnd", 1.8, "VDD");
     nl.add_resistor("vout", "gnd", 100000.0, "RLOAD");
-    let mp = MosfetParams {
-        mosfet_type: MosfetType::P,
-        vth: -0.55,
-        kp: 0.004,
-        lambda: 0.06,
-    };
-    let mn = MosfetParams {
-        mosfet_type: MosfetType::N,
-        vth: 0.55,
-        kp: 0.004,
-        lambda: 0.06,
-    };
+    let mp = MosfetParams::square_law(MosfetType::P, -0.55, 0.004, 0.06);
+    let mn = MosfetParams::square_law(MosfetType::N, 0.55, 0.004, 0.06);
     nl.add_mosfet("MP", "vin", "vout", "vdd", mp);
     nl.add_mosfet("MN", "vin", "vout", "gnd", mn);
     nl
@@ -98,18 +88,8 @@ fn inverter_sweep_matches_esm_oracles() {
 
 #[test]
 fn symmetric_mosfet_operating_point_matches_esm_exactly() {
-    let qn = MosfetParams {
-        mosfet_type: MosfetType::N,
-        vth: 0.55,
-        kp: 0.004,
-        lambda: 0.06,
-    };
-    let qp = MosfetParams {
-        mosfet_type: MosfetType::P,
-        vth: -0.55,
-        kp: 0.004,
-        lambda: 0.06,
-    };
+    let qn = MosfetParams::square_law(MosfetType::N, 0.55, 0.004, 0.06);
+    let qp = MosfetParams::square_law(MosfetType::P, -0.55, 0.004, 0.06);
     // Linear region (drive 1.25 > vds 0.9): 0.004·(1.25·0.9 − 0.5·0.81)·1.054.
     let esm = 0.00303552_f64;
     let a = crate::mosfet::operating_point(&qn, 1.8, 0.9, 0.0);
@@ -124,18 +104,8 @@ fn symmetric_mosfet_operating_point_matches_esm_exactly() {
 
 #[test]
 fn shorted_gate_fault_drags_output_low() {
-    let mp = MosfetParams {
-        mosfet_type: MosfetType::P,
-        vth: -0.55,
-        kp: 0.004,
-        lambda: 0.06,
-    };
-    let mn = MosfetParams {
-        mosfet_type: MosfetType::N,
-        vth: 0.55,
-        kp: 0.004,
-        lambda: 0.06,
-    };
+    let mp = MosfetParams::square_law(MosfetType::P, -0.55, 0.004, 0.06);
+    let mn = MosfetParams::square_law(MosfetType::N, 0.55, 0.004, 0.06);
     let mut nl = crate::Netlist::new(&["gnd", "vdd", "vin", "vout"]);
     nl.add_v_source("vdd", "gnd", 1.8, "VDD");
     nl.add_resistor("vin", "gnd", 10000.0, "RDRIVE");
